@@ -1,5 +1,6 @@
 from .metadata import SEARCH_DESCRIPTION, CONVERT_DESCRIPTION
-from .converter.audio import extract_audio
+from .converter.audio import extract_audio, audio_formats
+from .converter.video import download_video, video_formats
 from fastapi import FastAPI, Query, HTTPException
 
 from re import search as re_search, Match
@@ -13,19 +14,17 @@ async def root():
     return {"message": "Hello World"}
 
 
-@app.get(
-    "/convert",
-    description=CONVERT_DESCRIPTION
-)
+@app.get("/convert", description=CONVERT_DESCRIPTION)
 async def convert(
     youtubelink: str,
-    format: str | None = None,
+    format: str = "mp3",
     start_at: int = 0,
-    stop_at: int | None = None,
+    stop_at: int = -1,
+    resolution: int = 1080
 ):
     match: Match | None = re_search(
-        '#(?<=v=)[a-zA-Z0-9-]+(?=&)|(?<=v\/)[^&\n]+|(?<=v=)[^&\n]+|(?<=youtu.be/)[^&\n]+#',  # noqa
-        youtubelink
+        "#(?<=v=)[a-zA-Z0-9-]+(?=&)|(?<=v\/)[^&\n]+|(?<=v=)[^&\n]+|(?<=youtu.be/)[^&\n]+#",  # noqa
+        youtubelink,
     )
 
     # Check if we got a parsable youtube link
@@ -52,38 +51,31 @@ async def convert(
     if reason is not None:
         raise HTTPException(422, f"Ivalid timestamp: {reason}")
 
-    supported_formats = {
-        # not supporting webm yet
-        "mp4": "video",
-        "mov": "video",
-        "m4a": "audio",
-        "aac": "audio",
-        "mp3": "audio",
-        "ogg": "audio",
-        "opus": "audio",
-    }
-    if format not in supported_formats:
+    if format not in audio_formats and format not in video_formats:
         raise HTTPException(
             422,
-            f"Invalid format selected: '{format}' || Supported output formats:"
-            f" {', '.join(x for x in supported_formats.keys())}"
+            f"Invalid format selected: '{format}' || Supported audio formats:"
+            f" {', '.join(x for x in audio_formats)}"
+            f" || Supported video formats:"
+            f" {', '.join(x for x in video_formats)}",
         )
 
     # If all checks pass, lets start using yt-dlp
-    
-    return {"message": "Convert endpoint works"}
+    if format in audio_formats:
+        extract_audio(youtubelink, format, start_at, stop_at)
+    else:
+        download_video(youtubelink, format, resolution, start_at, stop_at)
+
+    return {"message": "converting done!"}
 
 
-@app.get(
-    "/search",
-    description=SEARCH_DESCRIPTION
-)
+@app.get("/search", description=SEARCH_DESCRIPTION)
 async def search(
     q: str = Query(
         default=None,
-        description="The search query. Use parameter `query` instead.",
-        deprecated=True
+        description="The search query. Use parameter `search` instead.",
+        deprecated=False,
+        alias="search"
     )
-
 ):
     return {"message": "Search endpoint works"}
