@@ -20,7 +20,7 @@ def download_video(
     urls = [url]
     ydl_opts = {
         "format": f"bestvideo[height<={resolution}][ext={format}]"
-                  "+bestaudio[ext=m4a]/best[ext={format}]/best",
+                  f"+bestaudio[ext=m4a]/best[ext={format}]/best",
         "download_ranges": download_range_func(
             chapters=None,
             ranges=[
@@ -46,3 +46,5 @@ def test_video_formats() -> None:
         )
 
 # test_video_formats()
+
+# download_video("https://www.youtube.com/watch?v=Lli-_o_NuLQ", "mp4", 1080, 41, 79)

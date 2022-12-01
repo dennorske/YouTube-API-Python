@@ -10,7 +10,7 @@ Please note that converting is a data-intensive task, and hence you may be
 throttled quite quickly, especially for video formats.
 
 If you are throttled,
-a `429` HTTP response is given, and it has a `wait_for` field that lets you
+a `429` HTTP response is given, and it has a `Retry-After` field that lets you
 know how many seconds you need to wait for next request."""
 
 SEARCH_DESCRIPTION = """Used to search for videos. This endpoint requires a
