@@ -13,10 +13,12 @@ def extract_audio(url: str, format: str, start: int, end: int):
     urls = [url]
     ydl_opts = {
         'format': f'{format}/bestaudio/best',
-        # 'download_ranges': download_range_func(
-        #     chapters=None,
-        #     ranges=[(start, {float('inf') if end == -1 else int(end)})]
-        # ),
+        'download_ranges': download_range_func(
+            chapters=None,
+            ranges=[
+                (start, 0 if end == -1 else end),
+            ]
+        ),
         'force_keyframes_at_cuts': True,  # for yt links
         'postprocessors': [{  # Extract audio using ffmpeg
             'key': 'FFmpegExtractAudio',
