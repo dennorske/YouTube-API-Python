@@ -29,6 +29,3 @@ def extract_audio(url: str, format: str, start: int, end: int):
 
     if error_code:
         print("Error happened")
-
-
-extract_audio("https://youtube.com/watch?v=MGNZJib6KxI", "mp3", 90, 190)
