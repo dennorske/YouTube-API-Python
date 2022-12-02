@@ -2,6 +2,7 @@ from .metadata import SEARCH_DESCRIPTION, CONVERT_DESCRIPTION
 from .converter.audio import extract_audio, audio_formats
 from .converter.video import download_video, video_formats
 from .converter import check_length
+from .basemodels import ConvertRequest
 from fastapi import FastAPI, Query, HTTPException
 
 from re import search as re_search, Match
@@ -14,18 +15,17 @@ app = FastAPI()
 async def root():
     return {"message": "Hello World"}
 
-# TODO: Make post
+
 # TODO: Indempotent?
 
 
-@app.get("/convert", description=CONVERT_DESCRIPTION)
-async def convert(
-    youtubelink: str,
-    format: str,
-    start_at: int = 0,
-    stop_at: int = -1,
-    resolution: int = 1080
-):
+@app.post("/convert", description=CONVERT_DESCRIPTION)
+async def convert(request: ConvertRequest):
+    start_at = request.start_at
+    stop_at = request.stop_at
+    youtubelink = request.youtubelink
+    resolution = request.resolution
+    # verify the link
     match: Match | None = re_search(
         "#(?<=v=)[a-zA-Z0-9-]+(?=&)|(?<=v\/)[^&\n]+|(?<=v=)[^&\n]+|(?<=youtu.be/)[^&\n]+#",  # noqa
         youtubelink,
@@ -36,7 +36,7 @@ async def convert(
         raise HTTPException(422, "The YouTube URL seems invalid")
 
     if format is None:
-        raise HTTPException(422, "No \"format\" parameter provided (required)")
+        raise HTTPException(422, 'No "format" parameter provided (required)')
 
     if format not in audio_formats and format not in video_formats:
         raise HTTPException(
@@ -50,6 +50,7 @@ async def convert(
 
     # Check the start and stop timestamp values
     vid_length = check_length(youtubelink)
+
     reason = None
     if start_at != 0:
         # start stamp was provided (default is 0)
@@ -91,6 +92,6 @@ async def search(
     ),
     max_results: int = Query(
         description="Max amount of results (1-50) to retrieve"
-    )
+    ),
 ):
     return {"message": "Search endpoint works"}

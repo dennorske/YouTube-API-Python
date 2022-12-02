@@ -1,28 +1,36 @@
 from pydantic import BaseModel
 from fastapi import Query
-from datetime import datetime
 
 
-class ConvertResponseError(BaseModel):
-    error: bool = False
-    """Whether there was an error. False means no error."""
-    message: str
-    """Will be empty if error is false. Otherwise, this is the information
-    as to why the conversion failed."""
-
-
-class ConvertResponse(BaseModel):
-    youtube_id: str
-    """The ID of the youtube video."""
-    title: str
-    """Main title of the video that was converted."""
-    alt_title: str
-    """Secondary title, if any"""
-    original_duration: int
-    """YouTube video total duration in seconds-"""
-    duration: int
-    """Video duration of the _converted_ video (in seconds)."""
-    file: str
-    """The file that the link was converted to."""
-    uploaded_at: datetime
-    """Date of when the YouTube video was created."""
+class ConvertRequest(BaseModel):
+    youtubelink: str = Query(
+        default=...,
+        description="The youtube URL for the video",
+        title="YouTube URL",
+    )
+    format: str = Query(
+        default=...,
+        title="Requested Format",
+        description="The format/extension you want to convert to.",
+    )
+    start_at: int = Query(
+        default=0,
+        title="Start Timestamp",
+        description="Start time. 0 = start of video",
+        unit="Seconds",
+    )
+    stop_at: int = Query(
+        default=-1,
+        title="Stop Timestamp",
+        description="Convert until this timestamp. -1 = end of video.",
+        min=-1,
+        unit="Seconds",
+    )
+    resolution: int = Query(
+        default=720,
+        description="The wished resolution. Will find the highest available.",
+        title="Video Resolution",
+        min=240,
+        unit="p",
+        lt=8128,
+    )
