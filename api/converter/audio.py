@@ -57,4 +57,8 @@ def extract_audio(
 
 def test_audio_formats() -> None:
     for format in audio_formats:
-        extract_audio("https://youtube.com/watch?v=MGNZJib6KxI", "MGNZJib6KxI", format)
+        extract_audio(
+            "https://youtube.com/watch?v=MGNZJib6KxI",
+            "MGNZJib6KxI",
+            format
+        )
