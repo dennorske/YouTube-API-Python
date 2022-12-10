@@ -15,3 +15,6 @@ know how many seconds you need to wait for next request."""
 
 SEARCH_DESCRIPTION = """Used to search for videos. This endpoint requires a
 valid API KEY."""
+
+
+DOWNLOAD_DESCRIPTION = "Endpoint that serves the converted files"

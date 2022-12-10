@@ -110,6 +110,9 @@ ENV/
 env.bak/
 venv.bak/
 
+# Cache folder and metadata
+metadata.json
+download/
 # Spyder project settings
 .spyderproject
 .spyproject

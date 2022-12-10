@@ -1,8 +1,12 @@
-from .metadata import SEARCH_DESCRIPTION, CONVERT_DESCRIPTION
+from .metadata import (
+    SEARCH_DESCRIPTION, CONVERT_DESCRIPTION, DOWNLOAD_DESCRIPTION
+)
+from starlette.responses import FileResponse
 from .converter.audio import extract_audio, audio_formats
 from .converter.video import download_video, video_formats
-from .converter import check_length
+from .converter import check_length, video_metadata
 from .basemodels import ConvertRequest
+from .converter.cache import cache
 from fastapi import FastAPI, Query, HTTPException
 
 from re import search as re_search, Match
@@ -25,16 +29,18 @@ async def convert(request: ConvertRequest):
     stop_at = request.stop_at
     youtubelink = request.youtubelink
     resolution = request.resolution
+    format = request.format
     # verify the link
     match: Match | None = re_search(
         "#(?<=v=)[a-zA-Z0-9-]+(?=&)|(?<=v\/)[^&\n]+|(?<=v=)[^&\n]+|(?<=youtu.be/)[^&\n]+#",  # noqa
         youtubelink,
     )
-
+    video_id: str
     # Check if we got a parsable youtube link, and a valid format
     if match is None:
         raise HTTPException(422, "The YouTube URL seems invalid")
-
+    else:
+        video_id = match.group()
     if format is None:
         raise HTTPException(422, 'No "format" parameter provided (required)')
 
@@ -74,12 +80,22 @@ async def convert(request: ConvertRequest):
         raise HTTPException(422, f"Ivalid timestamp: {reason}")
 
     # If all checks pass, lets start using yt-dlp
+    file_name: str = ""
     if format in audio_formats:
-        extract_audio(youtubelink, format, start_at, stop_at)
+        file_name = extract_audio(youtubelink, video_id, format, start_at, stop_at)
     else:
-        download_video(youtubelink, format, resolution, start_at, stop_at)
+        file_name = download_video(
+            youtubelink, video_id, format, resolution, start_at, stop_at
+        )
 
-    return {"message": "converting done!"}
+    # Return metadata and give download URL
+    response = {}
+    response["download_url"] = app.url_path_for("download", filename=file_name)
+    response["youtube_metadata"] = video_metadata.get_metadata_for_url(
+        youtubelink
+    )
+
+    return response
 
 
 @app.get("/search", description=SEARCH_DESCRIPTION)
@@ -95,3 +111,10 @@ async def search(
     ),
 ):
     return {"message": "Search endpoint works"}
+
+
+@app.get("/download/{filename}", description=DOWNLOAD_DESCRIPTION)
+async def download(filename: str):
+    cache_dir = cache.cache_dir
+    response = FileResponse(f"{cache_dir}{filename}")
+    return response

@@ -1,6 +1,7 @@
 import yt_dlp  # type: ignore
 from yt_dlp.utils import download_range_func  # type: ignore
-import json
+from fastapi import HTTPException
+from .cache import cache
 
 audio_formats = [
     "m4a",
@@ -10,16 +11,18 @@ audio_formats = [
 
 
 def extract_audio(
-    url: str, format: str, start: int = 0, end: int = -1
-) -> dict:
+    url: str, video_id: str, format: str, start: int = 0, end: int = -1
+) -> str:
     """Extract youtube audio in wanted format.
 
     start: int
         Value between 0 and video end (in seconds)
     end: int
         -1 for video length, or = (start + 1) > start
-    """
 
+    Returns the file name in b64
+    """
+    file_name = cache.get_file_name(video_id, format, start, end, None)
     ydl_opts = {
         'format': f'{format}/bestaudio/best',
         'download_ranges': download_range_func(
@@ -33,45 +36,25 @@ def extract_audio(
             'key': 'FFmpegExtractAudio',
             'preferredcodec': f'{format}',
         }],
-        "outtmpl": ""
+        "outtmpl": f'{cache.cache_dir}'
+        + f'{file_name}'
     }
-    metadata = {}
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        try:
-            metadata = ydl.extract_info(url, download=False)
-            ydl.download([url])
-        except KeyError as k:
-            print(
-                f"ERROR: Could not convert {url} to format: {k}"
-                "(Unavailable)"
-            )
-            # raise HTTPException(
-            #     200, f"Please try another format. {format} seems unavailable "
-            #     "for this link."
-            # )
 
-    response = {}
-    if len(metadata):
-        print(json.dumps(metadata, indent=4))
-        unwanted_keys = [  # Keys that seem unecessary to forward in metadata.
-            "thumbnails",
-            "formats",
-            "http_headers",
-            "downloader_options",
-            "url",
-            "extractor",
-            "extractor_key"
-        ]
-        response["youtube_metadata"] = metadata
-        (response['youtube_metadata'].pop(x) for x in unwanted_keys)
+    # Download the file if it does not exist
+    if not cache.has_file(file_name):
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            try:
+                ydl.download([url])
+            except KeyError:
+                raise HTTPException(
+                    500,
+                    f'The format "{format}" is not available:'
+                )
 
-        # Send download URL
-        #WIP
-    return response
+    # When all is well, the endpoint code will return a response
+    return file_name
 
 
 def test_audio_formats() -> None:
     for format in audio_formats:
-        extract_audio("https://youtube.com/watch?v=MGNZJib6KxI", format)
-
-#extract_audio("https://youtube.com/watch?v=MGNZJib6KxI", "mp3")
+        extract_audio("https://youtube.com/watch?v=MGNZJib6KxI", "MGNZJib6KxI", format)
