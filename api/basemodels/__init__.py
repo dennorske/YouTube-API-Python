@@ -28,9 +28,12 @@ class ConvertRequest(BaseModel):
     )
     resolution: int = Query(
         default=720,
-        description="The wished resolution. Will find the highest available.",
+        description="The wished resolution. Will find the highest available."
+        + "If the resolution you requested isn't available, "
+        + "another file format may have it.",
         title="Video Resolution",
         min=240,
+        max=4096,
         unit="p",
         lt=8128,
     )

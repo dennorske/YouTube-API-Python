@@ -1,5 +1,4 @@
 import yt_dlp  # type: ignore
-import json
 
 
 def get_metadata_for_url(url: str) -> dict:
@@ -27,6 +26,7 @@ def get_metadata_for_url(url: str) -> dict:
             "extractor_key"
         ]
         for x in unwanted_keys:
+            # Sometimes the keys are not present
             if metadata.get(x) is None:
                 continue
             metadata.pop(x)
