@@ -36,10 +36,10 @@ class MultimediaCache:
         file_info = ""
         if resolution is not None:
             file_info = (
-                f"{video_id}-{resolution}-{start}:{stop}"
+                f"{video_id}-{resolution}-{start}-{stop}"
             )
         else:
-            file_info = f"{video_id}-{start}:{stop}"
+            file_info = f"{video_id}-{start}-{stop}"
 
         return b64encode(file_info.encode()).decode() + "." + format
 

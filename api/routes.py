@@ -123,7 +123,13 @@ async def search(
 @app.get("/download/{filename}", description=DOWNLOAD_DESCRIPTION)
 async def download(filename: str):
     cache_dir = cache.cache_dir
+    # The following is done because the extension is not b64 encoded.
+    # We separate them before getting the name, and then re-attach
+    dot_position = filename.find(".")
+    extension = filename[dot_position:]
+    filename = filename[:dot_position]
     response = FileResponse(
-        f"{cache_dir}{filename}", filename=b64decode(filename).decode()
+        f"{cache_dir}{filename}{extension}",
+        filename=b64decode(filename).decode() + extension
     )
     return response
