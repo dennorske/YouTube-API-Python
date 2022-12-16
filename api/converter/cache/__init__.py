@@ -6,8 +6,11 @@ class MultimediaCache:
     def __init__(self) -> None:
         """Default cache directory if not defined, is in ./download"""
         self.cache_dir = os.getenv("CACHE_DIR", "./download")
+        if len(self.cache_dir) == 0:  # if empty, avoid it being /
+            self.cache_dir = "./download"
         if self.cache_dir[-1] != "/":
             self.cache_dir = self.cache_dir + "/"
+
         # create the cache directory if it doesn't exist
         if not os.path.exists(self.cache_dir):
             os.makedirs(self.cache_dir)
