@@ -1,0 +1,44 @@
+{
+    "client": "Thunder Client",
+    "collectionName": "python-yt-api",
+    "dateExported": "2023-04-21T14:06:58.985Z",
+    "version": "1.1",
+    "folders": [],
+    "requests": [
+        {
+            "_id": "10f02b5f-ffa8-4167-b306-fd8ce08d09c8",
+            "colId": "2204dc04-5769-4a5e-b67d-938fcc838ead",
+            "containerId": "",
+            "name": "Try convert mp3",
+            "url": "http://localhost:8000/convert?start_at=0&stop_at=-1&youtubelink=https://www.youtube.com/watch?v=9vKOXLtf2dw&resolution=720&format=mp4",
+            "method": "POST",
+            "sortNum": 10000,
+            "created": "2023-04-21T14:05:49.131Z",
+            "modified": "2023-04-21T14:05:49.131Z",
+            "headers": [],
+            "params": [
+                {
+                    "name": "start_at",
+                    "value": "0",
+                    "isPath": false
+                },
+                {
+                    "name": "stop_at",
+                    "value": "-1",
+                    "isPath": false
+                },
+                {
+                    "name": "youtubelink",
+                    "value": "https://www.youtube.com/watch",
+                    "isPath": false
+                }
+            ],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"start_at\": 0,\n  \"stop_at\": -1,\n  \"youtubelink\": \"https://www.youtube.com/watch?v=9vKOXLtf2dw\",\n  \"resolution\": 720,\n  \"format\": \"mp3\"\n}",
+                "form": []
+            },
+            "tests": []
+        }
+    ]
+}
