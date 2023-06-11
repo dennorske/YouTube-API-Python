@@ -3,13 +3,14 @@ from .metadata import (
     CONVERT_DESCRIPTION,
     DOWNLOAD_DESCRIPTION,
 )
-from starlette.responses import FileResponse, RedirectResponse
+import requests
+from starlette.responses import FileResponse, StreamingResponse
 from .converter.audio import extract_audio, audio_formats
 from .converter.video import download_video, video_formats
 from .converter import check_length, video_metadata
 from .basemodels import ConvertRequest
 from .converter.cache import cache
-from .helpers import extract_video_id
+from .helpers import extract_video_id, fetch_stream
 import api.quest_streamer as quest_streamer
 from fastapi import FastAPI, Query, HTTPException, Request
 from base64 import b64decode
@@ -21,9 +22,6 @@ app = FastAPI()
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
-
-
-# TODO: Indempotent?
 
 
 @app.post("/convert", description=CONVERT_DESCRIPTION)
@@ -142,31 +140,17 @@ async def quest_convert(full_path: str, request: Request):
         full_path = request.url.path[1:]
     video_id = extract_video_id(full_path)
     if video_id is None:
-        return RedirectResponse(
-            url=quest_streamer.get_link(  # type: ignore
-                "https://www.youtube.com/watch?v=h6zICyQtA8M" 
+        return StreamingResponse(
+            fetch_stream(quest_streamer.get_link(  # type: ignore
+                "https://www.youtube.com/watch?v=h6zICyQtA8M"
                 # Video error / not found URL, for visibility in VR.
-            ),
-            status_code=302
+            )),
+            media_type="video/mp4"
         )
     else:
-        link = quest_streamer.get_link(full_path)  # TODO: Force highest qlty
+        link = quest_streamer.get_link(full_path)
         if link is not None:
-            return RedirectResponse(
-                url=link, status_code=302
+            return StreamingResponse(
+                fetch_stream(link),
+                media_type="video/mp4"
             )
-
-    # if video_id is None:
-    #     return {
-    #         "error": "1",
-    #         "message": "Youtube URL couldn't be parsed. Verify and try again.",
-    #         "download_url": "https://www.youtube.com/watch?v=h6zICyQtA8M"
-    #     }
-    # else:
-    #     links = quest_streamer.get_link(full_path)  # TODO: Force highest qlty
-    #     if links is not None:
-    #         return {
-    #             "error": "0",
-    #             "message": "links available, provided in key 'download_url'",
-    #             "download_url": links
-    #         }

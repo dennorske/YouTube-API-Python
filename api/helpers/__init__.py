@@ -1,4 +1,5 @@
 from re import search as re_search, Match
+import requests  # type: ignore
 
 
 def extract_video_id(youtubelink: str) -> str | None:
@@ -10,6 +11,14 @@ def extract_video_id(youtubelink: str) -> str | None:
     if match is not None:
         return match.group()
     return None
+
+
+def fetch_stream(link):
+    session = requests.Session()
+    r = session.get(link, stream=True)
+    r.raise_for_status()
+    for chunk in r.iter_content(1024*1024):
+        yield chunk
 
 
 def test_extract_video_url():
