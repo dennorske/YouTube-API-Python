@@ -133,3 +133,6 @@ dmypy.json
 
 # other cache
 __pycache__
+
+# temporary files
+.temp/

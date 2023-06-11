@@ -3,16 +3,17 @@ from .metadata import (
     CONVERT_DESCRIPTION,
     DOWNLOAD_DESCRIPTION,
 )
-from starlette.responses import FileResponse
+from starlette.responses import FileResponse, RedirectResponse
 from .converter.audio import extract_audio, audio_formats
 from .converter.video import download_video, video_formats
 from .converter import check_length, video_metadata
 from .basemodels import ConvertRequest
 from .converter.cache import cache
+from .helpers import extract_video_id
+import api.quest_streamer as quest_streamer
 from fastapi import FastAPI, Query, HTTPException, Request
 from base64 import b64decode
-from re import search as re_search, Match
-
+from re import Match
 
 app = FastAPI()
 
@@ -32,20 +33,14 @@ async def convert(convert_request: ConvertRequest, request: Request):
     youtubelink = convert_request.youtubelink
     resolution = convert_request.resolution
     format = convert_request.format
-    # verify the link
-    match: Match | None = re_search(
-        "#(?<=v=)[a-zA-Z0-9-]+(?=&)|(?<=v\/)[^&\n]+|(?<=v=)[^&\n]+|(?<=youtu.be/)[^&\n]+#",  # noqa
-        youtubelink,
-    )
-    video_id: str
+
     # Check if we got a parsable youtube link, and a valid format
-    if match is None:
+    video_id = extract_video_id(youtubelink)
+
+    if video_id is None:
         raise HTTPException(422, "The YouTube URL seems invalid")
-    else:
-        video_id = match.group()
     if format is None:
         raise HTTPException(422, 'No "format" parameter provided (required)')
-
     if format not in audio_formats and format not in video_formats:
         raise HTTPException(
             422,
@@ -101,6 +96,7 @@ async def convert(convert_request: ConvertRequest, request: Request):
     response["youtube_metadata"] = video_metadata.get_metadata_for_url(
         youtubelink
     )
+    response["error"] = "0"
 
     return response
 
@@ -117,7 +113,10 @@ async def search(
         description="Max amount of results (1-50) to retrieve"
     ),
 ):
-    return {"message": "Search endpoint works"}
+    return {
+        "error": "0",
+        "message": "Search endpoint works",
+    }
 
 
 @app.get("/download/{filename}", description=DOWNLOAD_DESCRIPTION)
@@ -133,3 +132,41 @@ async def download(filename: str):
         filename=b64decode(filename).decode() + extension
     )
     return response
+
+
+@app.get("/{full_path:path}")
+async def quest_convert(full_path: str, request: Request):
+    if "?" in str(request.url):
+        full_path = request.url.path[1:] + "?" + request.url.components.query
+    else:
+        full_path = request.url.path[1:]
+    video_id = extract_video_id(full_path)
+    if video_id is None:
+        return RedirectResponse(
+            url=quest_streamer.get_link(  # type: ignore
+                "https://www.youtube.com/watch?v=h6zICyQtA8M" 
+                # Video error / not found URL, for visibility in VR.
+            ),
+            status_code=302
+        )
+    else:
+        link = quest_streamer.get_link(full_path)  # TODO: Force highest qlty
+        if link is not None:
+            return RedirectResponse(
+                url=link, status_code=302
+            )
+
+    # if video_id is None:
+    #     return {
+    #         "error": "1",
+    #         "message": "Youtube URL couldn't be parsed. Verify and try again.",
+    #         "download_url": "https://www.youtube.com/watch?v=h6zICyQtA8M"
+    #     }
+    # else:
+    #     links = quest_streamer.get_link(full_path)  # TODO: Force highest qlty
+    #     if links is not None:
+    #         return {
+    #             "error": "0",
+    #             "message": "links available, provided in key 'download_url'",
+    #             "download_url": links
+    #         }
