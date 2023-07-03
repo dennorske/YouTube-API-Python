@@ -3,8 +3,8 @@ from .metadata import (
     CONVERT_DESCRIPTION,
     DOWNLOAD_DESCRIPTION,
 )
-import requests
-from starlette.responses import FileResponse, StreamingResponse
+# import requests
+from starlette.responses import FileResponse, RedirectResponse
 from .converter.audio import extract_audio, audio_formats
 from .converter.video import download_video, video_formats
 from .converter import check_length, video_metadata
@@ -140,17 +140,16 @@ async def quest_convert(full_path: str, request: Request):
         full_path = request.url.path[1:]
     video_id = extract_video_id(full_path)
     if video_id is None:
-        return StreamingResponse(
-            fetch_stream(quest_streamer.get_link(  # type: ignore
-                "https://www.youtube.com/watch?v=h6zICyQtA8M"
+        return RedirectResponse(
+            url=quest_streamer.get_link(  # type: ignore
+                "https://www.youtube.com/watch?v=h6zICyQtA8M" 
                 # Video error / not found URL, for visibility in VR.
-            )),
-            media_type="video/mp4"
+            ),
+            status_code=302
         )
     else:
         link = quest_streamer.get_link(full_path)
         if link is not None:
-            return StreamingResponse(
-                fetch_stream(link),
-                media_type="video/mp4"
+            return RedirectResponse(
+                url=link, status_code=302
             )
