@@ -44,9 +44,7 @@ def download_video(
             try:
                 ydl.download(urls)
             except KeyError:
-                raise HTTPException(
-                    500, f'The format "{format}" is not available:'
-                )
+                raise HTTPException(500, f'The format "{format}" is not available:')
     return file_name
 
 
