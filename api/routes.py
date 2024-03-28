@@ -3,7 +3,6 @@ from .metadata import (
     CONVERT_DESCRIPTION,
     DOWNLOAD_DESCRIPTION,
 )
-import requests
 from starlette.responses import FileResponse, StreamingResponse
 from .converter.audio import extract_audio, audio_formats
 from .converter.video import download_video, video_formats
@@ -14,7 +13,6 @@ from .helpers import extract_video_id, fetch_stream
 import api.quest_streamer as quest_streamer
 from fastapi import FastAPI, Query, HTTPException, Request
 from base64 import b64decode
-from re import Match
 
 app = FastAPI()
 
@@ -64,7 +62,7 @@ async def convert(convert_request: ConvertRequest, request: Request):
 
     file_name = ""
     if convert_request.format in audio_formats:
-        file_name = extract_audio(
+        extract_audio(
             convert_request.youtubelink,
             video_id,
             convert_request.format,
@@ -72,7 +70,7 @@ async def convert(convert_request: ConvertRequest, request: Request):
             convert_request.stop_at,
         )
     else:
-        file_name = download_video(
+        download_video(
             convert_request.youtubelink,
             video_id,
             convert_request.format,
@@ -82,8 +80,18 @@ async def convert(convert_request: ConvertRequest, request: Request):
         )
 
     response = {}
-    response["download_url"] = str(request.url).strip("/convert") + app.url_path_for(
-        "download", filename=file_name
+    response["download_url"] = str(request.url).strip("/convert") + app.url_path_for(  # noqa
+        "download",
+        filename=cache.get_file_name(
+            video_id,
+            convert_request.format,
+            convert_request.start_at,
+            convert_request.stop_at,
+            convert_request.resolution
+            if convert_request.format in video_formats
+            else None,
+            True,
+        ),
     )
     response["youtube_metadata"] = video_metadata.get_metadata_for_url(
         convert_request.youtubelink

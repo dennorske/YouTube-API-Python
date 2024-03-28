@@ -22,6 +22,7 @@ class MultimediaCache:
         start: int,
         stop: int,
         resolution: int | None = None,
+        with_format: bool = True,
     ) -> str:
         """Request to generate the file name, depending on the parameters.
 
@@ -38,13 +39,14 @@ class MultimediaCache:
         """
         file_info = ""
         if resolution is not None:
-            file_info = (
-                f"{video_id}-{resolution}-{start}-{stop}"
-            )
+            file_info = f"{video_id}-{resolution}-{start}-{stop}"
         else:
             file_info = f"{video_id}-{start}-{stop}"
 
-        return b64encode(file_info.encode()).decode() + "." + format
+        return (
+            b64encode(file_info.encode()).decode()
+            + f"{'.' + str(format) if with_format else ''}"
+        )
 
     def has_file(self, file_name) -> bool:
         """Use self.get_file_name first, and pass it in to file_name here."""

@@ -26,7 +26,14 @@ def download_video(
     """
 
     urls = [url]
-    file_name = cache.get_file_name(video_id, format, start, end, resolution)
+    file_name = cache.get_file_name(
+        video_id,
+        format,
+        start,
+        end,
+        resolution,
+        False,
+    )
     ydl_opts = {
         "format": f"bestvideo[height<={resolution}][ext={format}]"
         f"+bestaudio[ext=m4a]/best[ext={format}]/best",
