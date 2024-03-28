@@ -3,7 +3,7 @@ from .metadata import (
     CONVERT_DESCRIPTION,
     DOWNLOAD_DESCRIPTION,
 )
-from starlette.responses import FileResponse, StreamingResponse
+from starlette.responses import FileResponse, StreamingResponse, TextResponse
 from .converter.audio import extract_audio, audio_formats
 from .converter.video import download_video, video_formats
 from .converter import check_length, video_metadata
@@ -13,6 +13,7 @@ from .helpers import extract_video_id, fetch_stream
 import api.quest_streamer as quest_streamer
 from fastapi import FastAPI, Query, HTTPException, Request
 from base64 import b64decode
+import os
 
 app = FastAPI()
 
@@ -60,7 +61,6 @@ async def convert(convert_request: ConvertRequest, request: Request):
     if reason is not None:
         raise HTTPException(422, f"Invalid timestamp: {reason}")
 
-    file_name = ""
     if convert_request.format in audio_formats:
         extract_audio(
             convert_request.youtubelink,
@@ -125,10 +125,15 @@ async def download(filename: str):
     dot_position = filename.find(".")
     extension = filename[dot_position:]
     filename = filename[:dot_position]
-    response = FileResponse(
-        f"{cache_dir}{filename}{extension}",
-        filename=b64decode(filename).decode() + extension,
-    )
+    response = None
+    try:
+        response = FileResponse(
+            f"{cache_dir}{filename}{extension}",
+            filename=b64decode(filename).decode() + extension,
+        )
+    except RuntimeError:
+        response = TextResponse("File not found", status_code=404)
+
     return response
 
 
