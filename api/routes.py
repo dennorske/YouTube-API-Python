@@ -140,21 +140,16 @@ async def download(filename: str):
 
 
 @app.get("/mp4/{full_path:path}")
-async def quest_convert(full_path: str, request: Request):
+async def direct_video(full_path: str, request: Request):
     if "?" in str(request.url):
-        full_path = request.url.path[1:] + "?" + request.url.components.query
+        full_path = request.url.path.strip("/mp4/") + "?" + request.url.components.query
     else:
-        full_path = request.url.path[1:]
+        full_path = request.url.path.strip("/mp4/")
     video_id = extract_video_id(full_path)
     if video_id is None:
-        return StreamingResponse(
-            fetch_stream(
-                quest_streamer.get_link(  # type: ignore
-                    "https://www.youtube.com/watch?v=h6zICyQtA8M"
-                    # Video error / not found URL, for visibility in VR.
-                )
-            ),
-            media_type="video/mp4",
+        return JSONResponse(
+            '{"error": "true", "message": "YouTube URL seems invalid"}',
+            status_code=404,
         )
     else:
         link = quest_streamer.get_link(full_path)

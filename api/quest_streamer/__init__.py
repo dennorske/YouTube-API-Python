@@ -3,12 +3,14 @@ from yt_dlp import YoutubeDL  # type: ignore
 
 def _fetch_video_info(url):
     ydl_opts = {
-        'format': 'bestvideo+bestaudio/best',
-        'postprocessors': [{
-            'key': 'FFmpegVideoConvertor',
-            'preferedformat': 'mp4',  # Just mp4 for the VRChat quest compat
-        }],
-        'simulate': True,  # avoid downloading
+        "format": "bestvideo+bestaudio/best",
+        "postprocessors": [
+            {
+                "key": "FFmpegVideoConvertor",
+                "preferedformat": "mp4",  # Just mp4 for the VRChat quest compat
+            }
+        ],
+        "simulate": True,  # avoid downloading
     }
     with YoutubeDL(ydl_opts) as ydl:
         info_dict = ydl.extract_info(url, download=False)
@@ -29,7 +31,8 @@ def get_link(url: str) -> str | None:
 
     # get streamable URLS that has both sound and video available.
     combined_links = [
-        format for format in video_info["formats"]
+        format
+        for format in video_info["formats"]
         if format.get("acodec") != "none"
         and format.get("vcodec") != "none"
         and format.get("ext") == "mp4"
