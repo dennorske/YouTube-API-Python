@@ -3,7 +3,7 @@ from .metadata import (
     CONVERT_DESCRIPTION,
     DOWNLOAD_DESCRIPTION,
 )
-from starlette.responses import FileResponse, StreamingResponse, TextResponse
+from starlette.responses import FileResponse, StreamingResponse, JSONResponse
 from .converter.audio import extract_audio, audio_formats
 from .converter.video import download_video, video_formats
 from .converter import check_length, video_metadata
@@ -131,8 +131,10 @@ async def download(filename: str):
             f"{cache_dir}{filename}{extension}",
             filename=b64decode(filename).decode() + extension,
         )
-    except RuntimeError:
-        response = TextResponse("File not found", status_code=404)
+    except Exception:
+        response = JSONResponse(
+            '{"error": "true", "message": "File not found"}', status_code=404
+        )
 
     return response
 
