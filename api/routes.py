@@ -80,16 +80,20 @@ async def convert(convert_request: ConvertRequest, request: Request):
         )
 
     response = {}
-    response["download_url"] = str(request.url).strip("/convert") + app.url_path_for(  # noqa
+    response["download_url"] = str(request.url).strip(
+        "/convert"
+    ) + app.url_path_for(  # noqa
         "download",
         filename=cache.get_file_name(
             video_id,
             convert_request.format,
             convert_request.start_at,
             convert_request.stop_at,
-            convert_request.resolution
-            if convert_request.format in video_formats
-            else None,
+            (
+                convert_request.resolution
+                if convert_request.format in video_formats
+                else None
+            ),
             True,
         ),
     )
@@ -152,6 +156,30 @@ async def direct_video(full_path: str, request: Request):
             status_code=404,
         )
     else:
-        link = quest_streamer.get_link(full_path)
+        link = quest_streamer.get_video_link(full_path)
         if link is not None:
             return StreamingResponse(fetch_stream(link), media_type="video/mp4")
+
+
+import time
+
+
+@app.get("/mp3/{full_path:path}")
+async def quest_convert(full_path: str, request: Request):
+    start_time = time.time()
+    if "?" in str(request.url):
+        full_path = request.url.path.strip("/mp3/") + "?" + request.url.components.query
+    else:
+        full_path = request.url.path.strip("/mp3/")
+    video_id = extract_video_id(full_path)
+    if video_id is None:
+        raise HTTPException(403, "Video not found")
+    else:
+        link = quest_streamer.get_audio_link(full_path)
+        if link is not None:
+            response = StreamingResponse(fetch_stream(link), media_type="audio/mpeg")
+            response.headers["X-Process-Time"] = str(time.time() - start_time)
+            print(f"{time.time() - start_time} seconds to serve audio")
+            print(f"link: {link}")
+            print(f"response: {response}")
+            return response
