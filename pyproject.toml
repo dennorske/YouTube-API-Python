@@ -1,0 +1,11 @@
+[project]
+name = "youtube-api-python"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi[all]>=0.115.12",
+    "ffmpeg>=1.4",
+    "requests>=2.32.4",
+    "uvicorn>=0.34.3",
+    "yt-dlp>=2025.6.9",
+]
